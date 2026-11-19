@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+model User {
+  id           Int          @id @default(autoincrement())
+  name         String
+  email        String       @unique
+  passwordHash String
+  role         String       @default("STUDENT")
+  className    String?
+  xp           Int          @default(0)
+  createdAt    DateTime     @default(now())
+  attempts     QuizAttempt[]
+  completions  LessonCompletion[]
+}
+model Subject {
+  id       Int      @id @default(autoincrement())
+  name     String   @unique
+  icon     String   @default("📚")
+  lessons  Lesson[]
+  quizzes  Quiz[]
+}
+model Lesson {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String   @db.Text
+  content     String   @db.LongText
+  subjectId   Int
+  subject     Subject  @relation(fields: [subjectId], references: [id])
+  completions LessonCompletion[]
+}
+model LessonCompletion {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  lessonId  Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  lesson    Lesson   @relation(fields: [lessonId], references: [id])
+  @@unique([userId, lessonId])
+}
+model Quiz {
+  id        Int       @id @default(autoincrement())
+  title     String
+  subjectId Int
+  subject   Subject   @relation(fields: [subjectId], references: [id])
+  questions Question[]
+}
+model Question {
+  id            Int      @id @default(autoincrement())
+  prompt        String   @db.Text
+  options       Json
+  correctAnswer Int
+  explanation   String   @db.Text
+  quizId        Int
+  quiz          Quiz     @relation(fields: [quizId], references: [id])
+}
+model QuizAttempt {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  quizId      Int
+  score       Int
+  total       Int
+  xpEarned    Int
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+}

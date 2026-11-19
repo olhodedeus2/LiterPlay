@@ -1,0 +1,3 @@
+"use server";
+import {getUser} from "@/lib/auth";import {db} from "@/lib/db";import {redirect} from "next/navigation";
+export async function submitQuiz(quizId:number,form:FormData){const user=await getUser();if(!user)redirect("/login");const quiz=await db.quiz.findUnique({where:{id:quizId},include:{questions:true}});if(!quiz||!quiz.questions.length)redirect("/materias");let score=0;for(const q of quiz.questions){if(Number(form.get(`q_${q.id}`))===q.correctAnswer)score++;}const xpEarned=score*10;await db.$transaction([db.quizAttempt.create({data:{userId:user.id,quizId,score,total:quiz.questions.length,xpEarned}}),db.user.update({where:{id:user.id},data:{xp:{increment:xpEarned}}})]);redirect(`/resultado?acertos=${score}&total=${quiz.questions.length}&xp=${xpEarned}`);}
